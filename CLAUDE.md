@@ -22,6 +22,7 @@ urban-resilience-sim/
 ├── energy_model.py    — Energy independence scoring, transition planning, grid-down modeling
 ├── water_system.py    — Water infrastructure resilience, grid-down water planning
 ├── network.py         — Inter-community corridor networking, trade matching, Haversine distance
+├── salvage.py         — Urban salvage & material recovery: junk/waste → usable resources
 ├── simulator.py       — Interactive CLI that ties all modules together (entry point)
 └── CLAUDE.md
 ```
@@ -35,7 +36,8 @@ simulator.py
 ├── food_system.py     (no internal deps)
 ├── energy_model.py    (no internal deps)
 ├── water_system.py    (no internal deps)
-└── network.py         (no internal deps)
+├── network.py         (no internal deps)
+└── salvage.py         (no internal deps)
 ```
 
 `community.py` is the foundational module — `CommunityProfile` is the central data structure passed to most subsystem functions.
@@ -50,6 +52,7 @@ python food_system.py      # Food system capacity report
 python energy_model.py     # Energy independence report
 python water_system.py     # Water infrastructure report
 python network.py          # Corridor network report
+python salvage.py          # Salvage & material recovery report
 ```
 
 Every module has an `if __name__ == "__main__"` block with a Fairmont, MN demo.
@@ -78,6 +81,7 @@ Every module has an `if __name__ == "__main__"` block with a Fairmont, MN demo.
 - `EnergyProfile` (energy_model.py) — generation capacity, storage, critical loads
 - `WaterInfrastructure` (water_system.py) — municipal system, backup sources, contamination risks
 - `CorridorNetwork` / `CommunityNode` / `Connection` (network.py) — graph of inter-community links
+- `SalvageProfile` / `SalvageSource` / `SALVAGE_DB` (salvage.py) — urban salvage inventory, material recovery, reuse planning
 
 ### Constants
 - `CALORIES_PER_PERSON_DAY = 2000`

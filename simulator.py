@@ -27,6 +27,7 @@ from network import (
     CorridorNetwork, CommunityNode, Connection,
     ConnectionType, TradeGood, network_report,
 )
+from salvage import SalvageProfile, salvage_report, salvage_resilience_score
 
 
 # ── Terminal helpers ──────────────────────────────────────────
@@ -233,6 +234,68 @@ def run_water_planner(profile: CommunityProfile):
     pause()
 
 
+# ── Salvage planner ──────────────────────────────────────────
+
+def run_salvage_planner(profile: CommunityProfile):
+    """Interactive salvage and material recovery assessment."""
+    banner("SALVAGE & MATERIAL RECOVERY ASSESSMENT")
+
+    banner("STRUCTURES", char="-")
+    abandoned = prompt_int("Abandoned/condemned houses", 0)
+    commercial = prompt_int("Empty commercial buildings", 0)
+
+    banner("VEHICLES & EQUIPMENT", char="-")
+    vehicles = prompt_int("Junk vehicles accessible", 0)
+    farm_equip = prompt_int("Idle/broken farm equipment", 0)
+
+    banner("SCRAP & STOCKPILES", char="-")
+    pallets = prompt_int("Businesses with pallet waste", 0)
+    scrap_tons = prompt_float("Scrap metal available (tons)", 0.0)
+    tires = prompt_int("Tires in stockpile", 0)
+    appliance_sites = prompt_int("Appliance dump/collection sites", 0)
+    jars = prompt_int("Glass jars/bottles recoverable", 0)
+    batteries = prompt_int("Dead batteries (vehicle/UPS/solar)", 0)
+    plastic = prompt_int("Plastic sheeting/tarp sources", 0)
+
+    banner("WASTE STREAMS (weekly)", char="-")
+    yard = prompt_float("Yard waste (truck loads/week)", 0.0)
+    food_waste = prompt_float("Food waste from restaurants/groceries (loads/week)", 0.0)
+    cardboard = prompt_float("Cardboard bales per week", 0.0)
+
+    banner("PROCESSING CAPACITY", char="-")
+    trades = prompt_int("Skilled trades people (welders, mechanics, electricians)", 0)
+    hand_tools = prompt_bool("Hand tools available?")
+    power_tools = prompt_bool("Power tools available?")
+    hauling = prompt_bool("Vehicle available for hauling?")
+    storage = prompt_float("Storage/workshop space (sq ft)", 0.0)
+
+    salvage = SalvageProfile(
+        community_name=profile.name,
+        population=profile.population,
+        abandoned_houses=abandoned,
+        commercial_buildings_empty=commercial,
+        junk_vehicles=vehicles,
+        farm_equipment_idle=farm_equip,
+        pallet_sources=pallets,
+        scrap_metal_tons=scrap_tons,
+        tire_stockpile=tires,
+        appliance_dumps=appliance_sites,
+        yard_waste_loads_weekly=yard,
+        food_waste_loads_weekly=food_waste,
+        cardboard_bales_weekly=cardboard,
+        glass_jars_available=jars,
+        battery_sources=batteries,
+        plastic_sheeting_sources=plastic,
+        skilled_trades_people=trades,
+        hand_tools_available=hand_tools,
+        power_tools_available=power_tools,
+        vehicle_for_hauling=hauling,
+        storage_space_sq_ft=storage,
+    )
+    print(salvage_report(salvage))
+    pause()
+
+
 # ── Demo mode ─────────────────────────────────────────────────
 
 def run_demo():
@@ -279,7 +342,8 @@ def main():
     banner("URBAN RESILIENCE SIMULATOR", char="#")
     print("  How long can your community sustain itself?")
     print("  Model infrastructure stress, food production,")
-    print("  energy independence, and inter-community networks.")
+    print("  energy independence, salvage recovery,")
+    print("  and inter-community networks.")
     print("")
     print("  Zero dependencies. Fully offline.")
     print("  License: CC0 — no rights reserved\n")
@@ -295,6 +359,7 @@ def main():
             "Food System Planner" + (" — crisis planting" if profile else " (build profile first)"),
             "Energy Assessment" + (" — independence score" if profile else " (build profile first)"),
             "Water Assessment" + (" — grid-down plan" if profile else " (build profile first)"),
+            "Salvage & Recovery" + (" — junk into resources" if profile else " (build profile first)"),
             "Crop Database — browse all crops",
             "Quit",
         ]
@@ -346,10 +411,17 @@ def main():
                 pause()
 
         elif choice == 7:
+            if profile:
+                run_salvage_planner(profile)
+            else:
+                print("\n  Build a profile first.")
+                pause()
+
+        elif choice == 8:
             show_crop_database()
             pause()
 
-        elif choice == 8:
+        elif choice == 9:
             banner("Stay resilient.", char="#")
             break
 

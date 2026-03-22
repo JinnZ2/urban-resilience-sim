@@ -17,6 +17,7 @@ and human resources. The simulator covers five interconnected domains:
 - **Food system planning** — crisis planting plans optimized for Zone 4, a crop database with caloric yields and storage life, and self-sufficiency benchmarks
 - **Energy independence** — score local generation capacity, model grid-down scenarios, and generate transition plans (solar, wind, biomass, battery)
 - **Water infrastructure** — assess municipal system resilience, model grid-down water failure cascades, and plan emergency purification
+- **Salvage & material recovery** — inventory urban junk, abandoned structures, and waste streams; generate prioritized reuse plans turning scrap into shelter, growing infrastructure, energy, tools, and trade goods
 - **Inter-community networking** — map corridor connections between towns, match surplus/need for trade, and assess regional resilience
 
 ## Running
@@ -34,6 +35,7 @@ python food_system.py      # Food system capacity report
 python energy_model.py     # Energy independence report
 python water_system.py     # Water infrastructure report
 python network.py          # Corridor network and trade matching
+python salvage.py          # Salvage & material recovery report
 ```
 
 ## Architecture
@@ -63,6 +65,11 @@ water_system.py      Municipal system resilience scoring with risk deductions
 network.py           Graph-based corridor network (communities as nodes)
                      Haversine distance calculation for geographic proximity
                      Resource surplus/need matching across communities
+
+salvage.py           15-source salvage database (structures, vehicles, waste, scrap)
+                     Material recovery estimation across 10 material classes
+                     Prioritized reuse planning (growing → water → shelter → energy → tools)
+                     Safety notes for each salvage source
 
 simulator.py         Interactive CLI tying all modules together
                      Community profile builder with guided prompts
