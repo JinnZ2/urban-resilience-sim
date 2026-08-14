@@ -36,6 +36,7 @@ python energy_model.py     # Energy independence report
 python water_system.py     # Water infrastructure report
 python network.py          # Corridor network and trade matching
 python salvage.py          # Salvage & material recovery report
+python claims.py           # Assumption ledger — what the model claims, and what's been falsified
 ```
 
 ## Architecture
@@ -71,9 +72,50 @@ salvage.py           15-source salvage database (structures, vehicles, waste, sc
                      Prioritized reuse planning (growing → water → shelter → energy → tools)
                      Safety notes for each salvage source
 
+claims.py            Assumption ledger — every claim the model rests on
+                     Falsification record with two-way supersession links
+                     Open-unknowns list and ledger integrity audit
+
 simulator.py         Interactive CLI tying all modules together
                      Community profile builder with guided prompts
                      Menu-driven access to all subsystem reports
+
+legacy/              Superseded work, kept with the evidence that retired it
+```
+
+## What This Model Doesn't Know
+
+Most of the numbers in this simulator are estimates. Pretending otherwise would
+make it worse than useless in the conditions it's built for, so the estimates
+are written down as claims instead — `claims.py` names each one, records what
+happened when it was tested, and keeps the versions that turned out wrong.
+
+Right now **76% of the model's active claims have never been checked against
+evidence**, and there are 34 open unknowns on the list. That number is meant to
+be uncomfortable. It's also the honest one.
+
+### The loop
+
+```
+hypothesize  →  run  →  falsified  →  edit claim  →  unknowns  →  rerun
+```
+
+A worked example is in [`legacy/`](legacy/): the days-to-crisis formula divided
+a day count by 365, adding years to days, and reported that a town holding three
+years of food would reach crisis in 6.3 days. Its own adjacent output — 328.8%
+annual surplus — is what exposed it. The record keeps the falsified formula, its
+output, the arithmetic, the fix, and the three things that are *still* unknown
+about the successor.
+
+### Precedence still carries
+
+A falsified claim isn't deleted and its id is never reused. The wrong version
+stays with the evidence that killed it and a pointer to what replaced it, so
+the next person to look at a number can see whether it's already been tried and
+rejected — and why. `lineage()` walks any claim back through every revision.
+
+```bash
+python claims.py           # full ledger, a worked lineage, and the unknowns list
 ```
 
 ## Zero Dependencies

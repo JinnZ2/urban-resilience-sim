@@ -28,6 +28,7 @@ from network import (
     ConnectionType, TradeGood, network_report,
 )
 from salvage import SalvageProfile, salvage_report, salvage_resilience_score
+from claims import CLAIM_LEDGER, ledger_report, lineage_report, unknowns_report
 
 
 # ── Terminal helpers ──────────────────────────────────────────
@@ -361,6 +362,7 @@ def main():
             "Water Assessment" + (" — grid-down plan" if profile else " (build profile first)"),
             "Salvage & Recovery" + (" — junk into resources" if profile else " (build profile first)"),
             "Crop Database — browse all crops",
+            "Assumption Ledger — what this model claims, and what's been falsified",
             "Quit",
         ]
 
@@ -422,8 +424,34 @@ def main():
             pause()
 
         elif choice == 9:
+            show_assumption_ledger()
+            pause()
+
+        elif choice == 10:
             banner("Stay resilient.", char="#")
             break
+
+
+def show_assumption_ledger():
+    """Browse the claims this model rests on and their falsification record."""
+    banner("ASSUMPTION LEDGER")
+    print("  Every number in this simulator is a claim about the world.")
+    print("  Most have never been checked. This is the honest accounting.\n")
+
+    options = ["Full ledger — all claims by status",
+               "Open unknowns — what would have to be found out",
+               "Claim lineage — trace one claim back through its revisions"]
+    choice = prompt_choice("View:", options)
+
+    if choice == 0:
+        print(ledger_report())
+    elif choice == 1:
+        print(unknowns_report())
+    elif choice == 2:
+        ids = [c.id for c in CLAIM_LEDGER]
+        labels = [f"{c.id} [{c.status.value}] — {c.statement[:52]}" for c in CLAIM_LEDGER]
+        picked = prompt_choice("Which claim?", labels)
+        print(lineage_report(ids[picked]))
 
 
 def show_crop_database():

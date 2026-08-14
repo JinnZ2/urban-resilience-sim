@@ -94,10 +94,12 @@ class CommunityProfile:
 
 # ── Caloric math ──────────────────────────────────────────────
 
-CALORIES_PER_PERSON_DAY = 2000
-CALORIES_PER_ACRE_GARDEN = 4_000_000   # intensive vegetable garden, annual
-CALORIES_PER_ACRE_GRAIN = 6_000_000    # corn/wheat equivalent
-CALORIES_PER_ACRE_MIXED = 3_000_000    # mixed subsistence
+# Each of these is a claim on record in claims.py — see the ids in brackets.
+CALORIES_PER_PERSON_DAY = 2000         # [FOOD-01] untested
+CALORIES_PER_ACRE_GARDEN = 4_000_000   # [FOOD-04] RETIRED — defined, never used;
+                                       # gardens are scored with _MIXED below
+CALORIES_PER_ACRE_GRAIN = 6_000_000    # [FOOD-03] untested — corn/wheat equivalent
+CALORIES_PER_ACRE_MIXED = 3_000_000    # [FOOD-02] untested — mixed subsistence
 
 def daily_caloric_need(population: int) -> float:
     return population * CALORIES_PER_PERSON_DAY
@@ -108,7 +110,9 @@ def local_production_capacity(profile: CommunityProfile) -> dict:
     annual_need = daily_need * 365
 
     garden_calories = profile.community_gardens_acres * CALORIES_PER_ACRE_MIXED
-    farm_calories = profile.active_farms_local * 80 * CALORIES_PER_ACRE_GRAIN  # est 80 acres avg
+    # [FOOD-05] 80 acres/farm is an untested inline estimate.
+    # [FOOD-08] STRAINED: counts commodity acreage as directly edible calories.
+    farm_calories = profile.active_farms_local * 80 * CALORIES_PER_ACRE_GRAIN
 
     retail_calories = profile.days_food_supply_retail * daily_need
 
@@ -135,8 +139,12 @@ def local_production_capacity(profile: CommunityProfile) -> dict:
         "retail_buffer_days": profile.days_food_supply_retail,
         "local_production_pct": round(local_pct, 1),
         "food_security": security,
+        # Claim FOOD-07 (see claims.py). (annual kcal / daily kcal) is already a
+        # count of days — the earlier formula divided it by 365 again, adding
+        # years to days. Upper bound only: assumes the full annual harvest is in
+        # hand on day one and draws down at a flat rate. See legacy/ for FOOD-06.
         "days_until_crisis_no_resupply": round(
-            profile.days_food_supply_retail + (total_local_annual / daily_need / 365)
+            profile.days_food_supply_retail + (total_local_annual / daily_need)
             if daily_need > 0 else 0, 1
         ),
     }

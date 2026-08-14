@@ -23,7 +23,9 @@ urban-resilience-sim/
 ├── water_system.py    — Water infrastructure resilience, grid-down water planning
 ├── network.py         — Inter-community corridor networking, trade matching, Haversine distance
 ├── salvage.py         — Urban salvage & material recovery: junk/waste → usable resources
+├── claims.py          — Assumption ledger: every claim the model rests on, its test status, and its falsification record
 ├── simulator.py       — Interactive CLI that ties all modules together (entry point)
+├── legacy/            — Superseded work, kept with the evidence that retired it
 └── CLAUDE.md
 ```
 
@@ -37,7 +39,8 @@ simulator.py
 ├── energy_model.py    (no internal deps)
 ├── water_system.py    (no internal deps)
 ├── network.py         (no internal deps)
-└── salvage.py         (no internal deps)
+├── salvage.py         (no internal deps)
+└── claims.py          (no internal deps — describes the others, imports none)
 ```
 
 `community.py` is the foundational module — `CommunityProfile` is the central data structure passed to most subsystem functions.
@@ -53,6 +56,7 @@ python energy_model.py     # Energy independence report
 python water_system.py     # Water infrastructure report
 python network.py          # Corridor network report
 python salvage.py          # Salvage & material recovery report
+python claims.py           # Assumption ledger, a claim lineage, and open unknowns
 ```
 
 Every module has an `if __name__ == "__main__"` block with a Fairmont, MN demo.
@@ -82,12 +86,72 @@ Every module has an `if __name__ == "__main__"` block with a Fairmont, MN demo.
 - `WaterInfrastructure` (water_system.py) — municipal system, backup sources, contamination risks
 - `CorridorNetwork` / `CommunityNode` / `Connection` (network.py) — graph of inter-community links
 - `SalvageProfile` / `SalvageSource` / `SALVAGE_DB` (salvage.py) — urban salvage inventory, material recovery, reuse planning
+- `Claim` / `Observation` / `CLAIM_LEDGER` / `OBSERVATIONS` (claims.py) — the model's assertions, their test status, and the runs filed against them
 
 ### Constants
 - `CALORIES_PER_PERSON_DAY = 2000`
 - `GALLONS_PER_PERSON_DAY = 80` (US average domestic)
 - `GALLONS_SURVIVAL_MINIMUM = 2`
 - Scoring uses additive point systems capped at 100 via `min(100, score)`
+
+## Assumption Ledger & the Precedence Rule
+
+This project follows the "practical over precise" principle, which means most of
+its numbers are estimates. `claims.py` is the accounting for that: it names every
+assumption the model rests on, records what happened when one was tested, and
+keeps the falsified versions readable.
+
+### The loop
+
+```
+hypothesize  →  claim enters CLAIM_LEDGER as UNTESTED
+run          →  module executed or output inspected
+falsified    →  Observation filed with verdict CONTRADICTS;
+                claim marked FALSIFIED — never edited in place
+edit claim   →  NEW claim written, revision_of points back,
+                superseded_by points forward
+unknowns     →  what would be needed to test the successor goes
+                into its unknowns list
+rerun        →  the successor is observed in turn
+```
+
+### The precedence rule
+
+**A falsified claim keeps its precedence.** Wrong versions are not overwritten —
+they stay in the ledger with the evidence that killed them, and their ids are
+never reused. `lineage(claim_id)` walks any claim back through every version it
+replaced, so the history of an idea stays reachable from the working code.
+Longer-form records go in `legacy/`, one file per falsification, named
+`YYYY-MM-DD-short-slug.md`. See `legacy/README.md` for the archival protocol.
+
+### Working with the ledger
+
+- Statements and observations are **append-only**. To change what a claim says,
+  write a new claim — do not edit the old one.
+- `audit_ledger()` checks the record's own integrity: duplicate ids, dangling
+  `revision_of` / `superseded_by` links, one-way supersession, and claims whose
+  declared status disagrees with the observations filed against them. It is
+  printed at the foot of `ledger_report()`. Keep it clean.
+- `open_unknowns()` / `unknowns_report()` are the "search for unknowns" step —
+  the list of what would have to be found out next.
+- Constants in the modules carry their claim id in a trailing comment, e.g.
+  `CALORIES_PER_PERSON_DAY = 2000  # [FOOD-01] untested`.
+
+### When you change a number
+
+If you change any constant, threshold, or formula in this repo, update the
+ledger in the same commit. A number that changes without a claim record is the
+one thing this structure is meant to prevent. If a change is prompted by a real
+observation, file the `Observation` too — including the date and how it was
+observed.
+
+### When a claim is only partly wrong
+
+Use `STRAINED`, not `FALSIFIED`. `STRAINED` means contradicted but not yet
+revised — it marks a known problem that has no fix on record. Do not silently
+pick a resolution to make the status look better; an open question annotated in
+place is more useful than a guess buried in code. `ENERGY-01` is the worked
+example.
 
 ## Testing
 
@@ -101,6 +165,10 @@ No formal test suite exists. Each module can be run standalone to verify output.
 4. Add a `*_report()` function returning formatted `str`
 5. Add `if __name__ == "__main__"` demo using Fairmont, MN data
 6. Import and integrate in `simulator.py` if it needs a menu entry
+7. **Register every estimate the module introduces as a `Claim` in `claims.py`**,
+   with its `basis`, its `falsifier`, and its `unknowns`. Tag the constant in
+   the source with its claim id. A new module that adds numbers without adding
+   claims is not finished.
 
 ## Important Design Principles
 

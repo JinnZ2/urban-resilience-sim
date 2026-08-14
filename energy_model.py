@@ -50,9 +50,13 @@ class EnergyProfile:
 
 def estimate_demand(population: int) -> dict:
     """Estimate community power demand from population."""
-    # US avg: ~1.2 kW per person (residential)
-    # Small town: lower due to less commercial/industrial
-    residential_mw = population * 0.001  # 1 kW per person
+    # [ENERGY-01] STRAINED — see claims.py. The US average is cited as ~1.2 kW
+    # per person, small-town load is said to run lower, and the code implements
+    # 1.0 kW per person. Nothing on record says which figure was intended or
+    # whether the 1.0 is the small-town reduction already applied. Left as-is:
+    # picking a number here would bury an open question rather than answer it.
+    residential_mw = population * 0.001  # 1.0 kW per person
+    # [ENERGY-02] untested ratio.  [ENERGY-03] peak factor below is untested.
     commercial_mw = residential_mw * 0.3
     critical_mw = 0.05 + 0.01 + 0.1  # water + comms + food storage
     if population > 5000:
