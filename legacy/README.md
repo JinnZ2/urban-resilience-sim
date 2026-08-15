@@ -69,6 +69,7 @@ a dated note explaining what replaced them.
 | Record | Claim | What happened |
 |--------|-------|---------------|
 | [`2026-08-14-days-to-crisis-unit-error.md`](2026-08-14-days-to-crisis-unit-error.md) | FOOD-06 → FOOD-07 | Days-to-crisis formula divided a day count by 365, adding years to days. Falsified by its own demo output. |
+| [`2026-08-15-averaging-hid-the-binding-constraint.md`](2026-08-15-averaging-hid-the-binding-constraint.md) | SCORE-01 → SCORE-04, +SCORE-05 | Unweighted mean reported FUNCTIONAL over a weak domain, inverting the leverage ranking. Also found: three scoring terms rewarded dependency on systems the scenarios remove. |
 
 ## What is not here yet
 

@@ -360,18 +360,66 @@ CLAIM_LEDGER = [
                   "six domain scores.",
         module="community.py",
         symbol="score_infrastructure()",
-        status=ClaimStatus.UNTESTED,
+        status=ClaimStatus.FALSIFIED,
         basis="Implementation: sum(scores.values()) / len(scores).",
         falsifier="A community failing from one collapsed domain while its "
                   "mean score stayed comfortable.",
+        unknowns=[],
+        superseded_by="SCORE-04",
+        notes="Averaging let a weak domain disappear into a comfortable "
+              "headline. Superseded by SCORE-04, which holds the reported "
+              "state down to the weakest domain. See legacy/.",
+    ),
+    Claim(
+        id="SCORE-04",
+        statement="Reported infrastructure state is the lesser of the "
+                  "mean-derived state and the state implied by the weakest "
+                  "domain — a community is no more functional than its "
+                  "binding constraint.",
+        module="community.py",
+        symbol="score_infrastructure()",
+        status=ClaimStatus.UNTESTED,
+        basis="Revision of SCORE-01 after the averaging failure.",
+        falsifier="A community whose weakest domain was genuinely not the "
+                  "thing that failed first — i.e. a case where the mean was "
+                  "the better predictor.",
         unknowns=[
-            "Equal weighting asserts that communication resilience matters "
-            "exactly as much as water. No evidence supports that.",
-            "Averaging hides single-domain collapse — the Fairmont demo scores "
-            "FUNCTIONAL at 79.7 while energy sits at 50.",
+            "Applying the SAME thresholds to the floor as to the mean may be "
+            "too harsh. A domain at 50 is weak, not failed, yet it now caps "
+            "the whole assessment at STRESSED.",
+            "Whether all six domains should be able to bind. Losing "
+            "communication and losing water are not equivalent failures.",
+            "Whether the floor should be a weighted floor — some domains have "
+            "substitutes (transportation) and some do not (water).",
         ],
-        notes="A minimum-domain or weighted score would likely behave better. "
-              "Left as-is pending a reason to prefer specific weights.",
+        revision_of="SCORE-01",
+        notes="Deliberately blunt. It surfaces the constraint rather than "
+              "estimating its severity, and a blunt visible constraint beats "
+              "a precise hidden one.",
+    ),
+    Claim(
+        id="SCORE-05",
+        statement="Scoring terms awarded for municipal water, grid connection "
+                  "and highway access measure service, not resilience, and "
+                  "score zero once those systems fail.",
+        module="community.py",
+        symbol="autonomy_scores()",
+        status=ClaimStatus.UNTESTED,
+        basis="These terms award points for connection to external systems "
+              "that the disruption scenarios explicitly remove.",
+        falsifier="A grid-down or supply-cut event in which the connected "
+                  "infrastructure kept contributing capacity anyway.",
+        unknowns=[
+            "Whether zero is the right value. A de-energised municipal system "
+            "still holds water in the tower and pipe for some hours.",
+            "Medical scores identically in both views, which is wrong — "
+            "pharmaceutical resupply and staffing are external and unmodelled.",
+            "Autonomy is computed on the same point scale without rescaling, "
+            "so the two numbers are comparable but the autonomy scale never "
+            "reaches 100. That is intended; it has not been validated.",
+        ],
+        notes="Reported alongside the connected score rather than replacing "
+              "it. The gap between them is the exposure.",
     ),
     Claim(
         id="SCORE-02",
@@ -379,14 +427,21 @@ CLAIM_LEDGER = [
                   "cross-domain comparability.",
         module="community.py",
         symbol="score_infrastructure()",
-        status=ClaimStatus.UNTESTED,
+        status=ClaimStatus.STRAINED,
         basis="Design convention across all scoring functions.",
         falsifier="Two communities with equal scores and clearly unequal "
                   "real-world outcomes.",
         unknowns=[
             "Capping compresses the top: a town far past a threshold scores "
             "the same as one barely over it.",
+            "Whether caps should be soft (diminishing returns) rather than "
+            "hard, so that further investment still registers.",
+            "Which caps are binding for a typical profile — unknown until "
+            "leverage_analysis() is run against a range of communities.",
         ],
+        notes="Contradicted by the leverage run but not yet revised: the fix "
+              "is a scale change across every scoring function and should not "
+              "be made one domain at a time.",
     ),
     Claim(
         id="SCORE-03",
@@ -409,6 +464,123 @@ CLAIM_LEDGER = [
         unknowns=[
             "Real storage is sized to fire-flow and peak-hour rules, which "
             "do not scale linearly with population.",
+        ],
+    ),
+
+    # ── Transition & leverage ──
+    Claim(
+        id="TRANS-01",
+        statement="Lever cost ranges are representative for a community of a "
+                  "few thousand people.",
+        module="transition.py",
+        symbol="LEVER_DB",
+        status=ClaimStatus.UNTESTED,
+        basis="Order-of-magnitude estimates. No quotes were collected.",
+        falsifier="Actual bids or grant budgets for any one lever.",
+        unknowns=[
+            "Costs do not scale linearly with population, and every lever "
+            "here is priced as if they do.",
+            "Regional labour and materials cost variation is not modelled.",
+            "Low/high ranges are guesses at spread, not measured percentiles.",
+        ],
+        notes="Ranked leverage is a ratio, so a systematic error in cost "
+              "cancels out of the ordering. A per-lever error does not.",
+    ),
+    Claim(
+        id="TRANS-02",
+        statement="Lever lead times run from decision to operation.",
+        module="transition.py",
+        symbol="LEVER_DB",
+        status=ClaimStatus.UNTESTED,
+        basis="Generic small-municipality practice.",
+        falsifier="Elapsed time on any real project of the same type.",
+        unknowns=[
+            "Whether the clock should start at first proposal, which is often "
+            "years before formal decision.",
+            "Supply chain lead times for equipment are not included and have "
+            "recently dominated for generators and transformers.",
+        ],
+    ),
+    Claim(
+        id="TRANS-03",
+        statement="Ranking levers by modelled score delta identifies the "
+                  "modifications that most improve real resilience.",
+        module="transition.py",
+        symbol="leverage_analysis()",
+        status=ClaimStatus.UNTESTED,
+        basis="Each lever is applied to a real profile copy and re-scored "
+              "through score_infrastructure().",
+        falsifier="A community that followed the ranking and gained no "
+                  "resilience — or gained it from a lever ranked low.",
+        unknowns=[
+            "The ranking inherits every SCORE-* claim wholesale. If the "
+            "domain weights are wrong, the ranking is wrong with them, and "
+            "nothing in the leverage calculation can detect that.",
+            "Levers whose benefit the scoring cannot see rank at zero — see "
+            "the SCORE-02 saturation observation. Absence of score movement "
+            "is not absence of value.",
+            "Interaction effects are ignored: levers are each evaluated "
+            "against the unmodified profile, so complementary pairs are "
+            "undervalued and redundant ones overvalued.",
+        ],
+        notes="The most important claim in this module and the least testable. "
+              "It is a ranking built on twenty untested numbers.",
+    ),
+    Claim(
+        id="TRANS-04",
+        statement="Leverage is score points per $10k, with costs floored at "
+                  "$250 so that no-capital levers remain rankable.",
+        module="transition.py",
+        symbol="COST_FLOOR_USD",
+        status=ClaimStatus.UNTESTED,
+        basis="Chosen to avoid division by zero on volunteer-only levers.",
+        falsifier="Measured organising cost — hours times a real wage — for "
+                  "any volunteer lever.",
+        unknowns=[
+            "Volunteer effort is not free and $250 is a placeholder for a "
+            "cost nobody has measured. It sets the top of the ranking, so "
+            "SKILLS-MAP scoring 104 points per $10k is an artefact of this "
+            "number as much as a finding.",
+            "Whether dollars are the right denominator at all. Council "
+            "attention and volunteer hours are usually scarcer than money.",
+        ],
+    ),
+    Claim(
+        id="TRANS-05",
+        statement="The recorded procedural steps and durations describe how "
+                  "these governance and financial instruments actually work.",
+        module="transition.py",
+        symbol="INSTRUMENT_DB",
+        status=ClaimStatus.UNTESTED,
+        basis="Generic US small-municipality practice, Minnesota-flavoured.",
+        falsifier="A city charter or state statute that sequences any of "
+                  "these differently.",
+        unknowns=[
+            "Charter cities and statutory cities differ substantially, and "
+            "the module does not ask which one it is modelling.",
+            "Referendum thresholds for GO bonds are state-specific and are "
+            "described here only as 'may be required'.",
+            "Every duration is a central tendency with no spread recorded.",
+        ],
+        notes="The 'fails when' field is the load-bearing part of each entry "
+              "and the least verifiable — it is practitioner lore, not law.",
+    ),
+    Claim(
+        id="TRANS-06",
+        statement="A lever can move in the earliest phase permitted by its "
+                  "least demanding instrument.",
+        module="transition.py",
+        symbol="lever_phase()",
+        status=ClaimStatus.UNTESTED,
+        basis="Implementation: min(phase) across the lever's instruments.",
+        falsifier="A lever routinely pursued through its expensive instrument "
+                  "when a cheap one was formally available.",
+        unknowns=[
+            "This is the optimistic reading. HOME-SOLAR lands in phase 0 "
+            "because an ordinance could carry it; in practice councils reach "
+            "for the grant and it lands in year two.",
+            "Political feasibility is not modelled at all. The cheapest legal "
+            "instrument is frequently not the achievable one.",
         ],
     ),
 ]
@@ -481,6 +653,57 @@ OBSERVATIONS = [
                 "energy domain sits at 50.0 — the weakest domain is invisible "
                 "in the headline. Averaging is masking the binding constraint.",
         verdict=Verdict.INCONCLUSIVE,
+    ),
+    Observation(
+        claim_id="SCORE-01",
+        date="2026-08-15",
+        source="Leverage analysis across the SMALL lever set",
+        finding="The averaging failure is not cosmetic — it inverts advice. "
+                "Ranked by mean-score gain alone, SKILLS-MAP (104 points per "
+                "$10k) dominates HOME-SOLAR (0.59). But energy is the domain "
+                "that binds, and HOME-SOLAR is the only small lever that "
+                "raises the floor at all (+5.0). A planner following the mean "
+                "would spend on the strongest domains and leave the "
+                "constraint untouched.",
+        verdict=Verdict.CONTRADICTS,
+    ),
+    Observation(
+        claim_id="SCORE-04",
+        date="2026-08-15",
+        source="`python community.py` after the revision",
+        finding="Fairmont's headline moves from FUNCTIONAL to STRESSED, held "
+                "there by energy at 50.0 while the mean is unchanged at 79.7. "
+                "The constraint is now visible in the state, not just in the "
+                "domain table. This confirms the mechanism does what it was "
+                "built to do; it is not evidence that the threshold choice is "
+                "correct.",
+        verdict=Verdict.INCONCLUSIVE,
+    ),
+    Observation(
+        claim_id="SCORE-05",
+        date="2026-08-15",
+        source="`python community.py` autonomy column",
+        finding="Fairmont scores 79.7 connected and 53.0 with external "
+                "systems removed — a 26.7 point exposure gap that the "
+                "original scoring never surfaced. Transportation falls 100 to "
+                "50, water 94 to 44, communication 80 to 40. Medical is "
+                "unchanged at 85, which is the known weak point of this "
+                "decomposition rather than a result.",
+        verdict=Verdict.INCONCLUSIVE,
+    ),
+    Observation(
+        claim_id="SCORE-02",
+        date="2026-08-15",
+        source="Leverage analysis across the SMALL lever set",
+        finding="Three of seven small levers score exactly zero because the "
+                "relevant term is already capped: CIVIC-CMTE (civic_"
+                "organizations already past min(20, n*5)), WELL-INV (wells "
+                "past min(15, n*3)), and GARDEN-ORD (the social term is a "
+                "flat +15 for any acreage above zero). Each still changes the "
+                "community — GARDEN-ORD adds 0.3 days of food — but hard caps "
+                "make the score blind to it. Capping does not merely compress "
+                "the top; it reports 'no benefit' for real benefit.",
+        verdict=Verdict.CONTRADICTS,
     ),
     Observation(
         claim_id="NET-01",

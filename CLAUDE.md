@@ -23,6 +23,7 @@ urban-resilience-sim/
 ├── water_system.py    — Water infrastructure resilience, grid-down water planning
 ├── network.py         — Inter-community corridor networking, trade matching, Haversine distance
 ├── salvage.py         — Urban salvage & material recovery: junk/waste → usable resources
+├── transition.py      — Leverage analysis + governance/financial pathways from old design to new
 ├── claims.py          — Assumption ledger: every claim the model rests on, its test status, and its falsification record
 ├── simulator.py       — Interactive CLI that ties all modules together (entry point)
 ├── legacy/            — Superseded work, kept with the evidence that retired it
@@ -40,6 +41,7 @@ simulator.py
 ├── water_system.py    (no internal deps)
 ├── network.py         (no internal deps)
 ├── salvage.py         (no internal deps)
+├── transition.py      → community.py
 └── claims.py          (no internal deps — describes the others, imports none)
 ```
 
@@ -56,6 +58,7 @@ python energy_model.py     # Energy independence report
 python water_system.py     # Water infrastructure report
 python network.py          # Corridor network report
 python salvage.py          # Salvage & material recovery report
+python transition.py       # Leverage ranking, phased transition pathway, one instrument
 python claims.py           # Assumption ledger, a claim lineage, and open unknowns
 ```
 
@@ -86,6 +89,7 @@ Every module has an `if __name__ == "__main__"` block with a Fairmont, MN demo.
 - `WaterInfrastructure` (water_system.py) — municipal system, backup sources, contamination risks
 - `CorridorNetwork` / `CommunityNode` / `Connection` (network.py) — graph of inter-community links
 - `SalvageProfile` / `SalvageSource` / `SALVAGE_DB` (salvage.py) — urban salvage inventory, material recovery, reuse planning
+- `Lever` / `LEVER_DB` / `InstrumentSpec` / `INSTRUMENT_DB` (transition.py) — modifications and the legal/financial vehicles that deliver them
 - `Claim` / `Observation` / `CLAIM_LEDGER` / `OBSERVATIONS` (claims.py) — the model's assertions, their test status, and the runs filed against them
 
 ### Constants
@@ -93,6 +97,51 @@ Every module has an `if __name__ == "__main__"` block with a Fairmont, MN demo.
 - `GALLONS_PER_PERSON_DAY = 80` (US average domestic)
 - `GALLONS_SURVIVAL_MINIMUM = 2`
 - Scoring uses additive point systems capped at 100 via `min(100, score)`
+
+## Leverage & Transition (`transition.py`)
+
+The model can say *what* a community should change. `transition.py` answers the
+two questions that follow: which changes are worth the most per dollar, and what
+institutional steps actually deliver them.
+
+### Leverage is computed, not asserted
+
+`evaluate_lever()` applies each `Lever` to a real copy of the profile and
+re-scores it through `community.score_infrastructure()`. Nothing in `LEVER_DB`
+stores a benefit figure. This means the ranking inherits every `SCORE-*` claim
+wholesale — if the domain weights are wrong, the ranking is wrong with them and
+the leverage calculation cannot detect it. That is claim `TRANS-03`, and it is
+the most load-bearing untested assumption in the repo.
+
+Ranking sorts levers that raise the **floor** (the binding constraint) ahead of
+levers that only raise the mean. Sorting by mean alone inverts the advice — see
+`legacy/2026-08-15-averaging-hid-the-binding-constraint.md`.
+
+### Zero-delta levers are a scoring limit, not a finding
+
+A lever whose domain term is already capped scores zero while still changing the
+community. These are flagged `SCORE SATURATED` in the report. Do not read them
+as "no benefit"; read them as "the score stopped counting". See `SCORE-02`.
+
+### Instruments carry the governance model
+
+`INSTRUMENT_DB` maps each `Instrument` to its procedural `steps`, `typical_months`,
+`money_source`, `reversibility`, and `fails_when`. The `fails_when` field is the
+most useful and least verifiable part of each entry — it is practitioner lore,
+not statute, and is claimed as such under `TRANS-05`.
+
+`Reversibility.LOW` instruments (GO bonds, revenue bonds, special assessments,
+TIF) are surfaced in a **lock-in warning**. Debt service is a fixed claim on
+future budgets; it narrows what a future council can respond to, which is a
+resilience cost the infrastructure score does not measure. Keep that warning
+whenever adding a long-horizon instrument.
+
+### Adding a lever
+
+Give it real `changes` against `CommunityProfile` fields, honest `cost_low` /
+`cost_high`, the `instruments` that could actually carry it, and any
+`prerequisites`. Then register its cost and lead-time basis under the `TRANS-*`
+claims — the same rule as any other number in this repo.
 
 ## Assumption Ledger & the Precedence Rule
 

@@ -29,6 +29,8 @@ from network import (
 )
 from salvage import SalvageProfile, salvage_report, salvage_resilience_score
 from claims import CLAIM_LEDGER, ledger_report, lineage_report, unknowns_report
+from transition import (LeverScale, Instrument, INSTRUMENT_DB, leverage_report,
+                        transition_report, instrument_report)
 
 
 # ── Terminal helpers ──────────────────────────────────────────
@@ -362,6 +364,8 @@ def main():
             "Water Assessment" + (" — grid-down plan" if profile else " (build profile first)"),
             "Salvage & Recovery" + (" — junk into resources" if profile else " (build profile first)"),
             "Crop Database — browse all crops",
+            "Leverage Analysis" + (" — most resilience per dollar" if profile else " (build profile first)"),
+            "Transition Pathway" + (" — governance & funding steps" if profile else " (build profile first)"),
             "Assumption Ledger — what this model claims, and what's been falsified",
             "Quit",
         ]
@@ -424,12 +428,62 @@ def main():
             pause()
 
         elif choice == 9:
-            show_assumption_ledger()
+            if profile:
+                show_leverage(profile)
+            else:
+                print("\n  Build a community profile first.\n")
             pause()
 
         elif choice == 10:
+            if profile:
+                show_transition(profile)
+            else:
+                print("\n  Build a community profile first.\n")
+            pause()
+
+        elif choice == 11:
+            show_assumption_ledger()
+            pause()
+
+        elif choice == 12:
             banner("Stay resilient.", char="#")
             break
+
+
+def show_leverage(profile: CommunityProfile):
+    """Rank modifications by resilience bought per dollar."""
+    banner("LEVERAGE ANALYSIS")
+    print("  Which modifications buy the most resilience per dollar?")
+    print("  Every lever is applied to your profile and re-scored, so this")
+    print("  is computed rather than asserted.\n")
+
+    options = ["Small modifications only — the highest-leverage question",
+               "Medium — budget-scale", "Large — capital-scale", "Everything"]
+    choice = prompt_choice("Scale:", options)
+    scale = [LeverScale.SMALL, LeverScale.MEDIUM, LeverScale.LARGE, None][choice]
+    print(leverage_report(profile, scale=scale))
+
+
+def show_transition(profile: CommunityProfile):
+    """The governance and financial pathway from old design to new."""
+    banner("TRANSITION PATHWAY")
+    print("  A model can say 'add 1 MW of local generation'. It cannot add it.")
+    print("  Somebody has to pass something, fund something, and own something.\n")
+
+    options = ["Phased pathway — what to do, in what order, funded how",
+               "Browse one instrument — the actual procedural steps"]
+    choice = prompt_choice("View:", options)
+
+    if choice == 0:
+        budget = prompt_float("Budget ceiling in dollars (0 for no limit)", 0)
+        print(transition_report(profile, budget=budget or None))
+    else:
+        instruments = list(INSTRUMENT_DB.keys())
+        labels = [f"{i.value} ({INSTRUMENT_DB[i].typical_months} mo, "
+                  f"{INSTRUMENT_DB[i].reversibility.value} reversibility)"
+                  for i in instruments]
+        picked = prompt_choice("Which instrument?", labels)
+        print(instrument_report(instruments[picked]))
 
 
 def show_assumption_ledger():

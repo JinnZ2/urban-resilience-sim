@@ -11,7 +11,7 @@ and what does the transition path look like?
 
 Simulates how a small community (1,000–50,000 people) responds to cascading
 infrastructure failures and models recovery pathways using local ecological
-and human resources. The simulator covers five interconnected domains:
+and human resources. The simulator covers seven interconnected domains:
 
 - **Supply chain stress** — model disruption scenarios from fuel shortages to full regional collapse, with week-by-week timelines showing food, fuel, water, and medical status
 - **Food system planning** — crisis planting plans optimized for Zone 4, a crop database with caloric yields and storage life, and self-sufficiency benchmarks
@@ -19,6 +19,7 @@ and human resources. The simulator covers five interconnected domains:
 - **Water infrastructure** — assess municipal system resilience, model grid-down water failure cascades, and plan emergency purification
 - **Salvage & material recovery** — inventory urban junk, abandoned structures, and waste streams; generate prioritized reuse plans turning scrap into shelter, growing infrastructure, energy, tools, and trade goods
 - **Inter-community networking** — map corridor connections between towns, match surplus/need for trade, and assess regional resilience
+- **Leverage & transition** — rank modifications by resilience bought per dollar, then map each one to the ordinance, bond, co-op, grant, or loan fund that could actually deliver it
 
 ## Running
 
@@ -36,6 +37,7 @@ python energy_model.py     # Energy independence report
 python water_system.py     # Water infrastructure report
 python network.py          # Corridor network and trade matching
 python salvage.py          # Salvage & material recovery report
+python transition.py       # Leverage ranking + phased transition pathway
 python claims.py           # Assumption ledger — what the model claims, and what's been falsified
 ```
 
@@ -72,6 +74,11 @@ salvage.py           15-source salvage database (structures, vehicles, waste, sc
                      Prioritized reuse planning (growing → water → shelter → energy → tools)
                      Safety notes for each salvage source
 
+transition.py        Leverage analysis — which changes buy the most per dollar
+                     20 governance & financial instruments with their real
+                     procedural steps, timelines, and failure modes
+                     Phased transition pathway with lock-in warnings
+
 claims.py            Assumption ledger — every claim the model rests on
                      Falsification record with two-way supersession links
                      Open-unknowns list and ledger integrity audit
@@ -83,6 +90,60 @@ simulator.py         Interactive CLI tying all modules together
 legacy/              Superseded work, kept with the evidence that retired it
 ```
 
+## Most Leveraged Small Modifications
+
+The model can say *what* to change. `transition.py` answers which changes are
+worth the most per dollar, and — the part that usually decides the outcome —
+what institutional steps actually deliver them.
+
+Leverage is **computed, not asserted**: every lever is applied to a real copy of
+the profile and re-scored. Levers that relieve the *binding constraint* sort
+ahead of levers that only raise the mean.
+
+```
+  lever            cost  pts/$10k  floor  auton  mo  notes
+  HOME-SOLAR       $14k      0.59   +5.0   +0.8   9  RELIEVES BINDING
+               Unlock household solar: permit guide + loan fund
+  SKILLS-MAP       $200    104.00   +0.0   +2.7   3
+               Inventory who can actually do things
+  MUTUAL-AID       $600     26.67   +0.0   +1.7   6
+  HAM-NET           $1k     11.03   +0.0   +1.7   6
+```
+
+### Somebody has to pass something
+
+A model can say "add 1 MW of local generation." It cannot add it. `INSTRUMENT_DB`
+holds the 20 governance and financial vehicles a small municipality actually has
+— ordinance, zoning amendment, budget line, revolving loan fund, special
+assessment, franchise fee, revenue bond, GO bond, TIF, co-op formation, joint
+powers, mutual aid compact — each with its real procedural steps, how long it
+runs, where the money comes from, and **what kills it**.
+
+Transitions are phased by the least demanding instrument that could carry them:
+
+- **Phase 0 — no appropriation.** Ordinances, resolutions, volunteer organizing,
+  mutual aid compacts, unlocking private investment. Can begin at the next
+  meeting. This phase is also what makes the later ones fundable: a standing
+  committee can hold a grant, and a skills inventory is what turns a mutual aid
+  agreement into a capability. Doing phase 0 late is the most common way a
+  transition stalls.
+- **Phase 1 — current budget cycle.** Budget lines, capital plans, grants,
+  revolving loan funds. Timing dominates: missing the preliminary levy
+  certification deadline costs a full year.
+- **Phase 2 — financed.** Bonds, assessments, co-ops, rate riders.
+
+### Lock-in is a resilience cost
+
+Phase 2 instruments get a **lock-in warning**. Debt service and assessments are
+fixed claims on future budgets — they narrow what a future council can respond
+to. That is a real resilience cost, and the infrastructure score does not measure
+it. The cheapest instruments are also the most reversible, which is not a
+coincidence.
+
+```bash
+python transition.py       # leverage ranking, phased pathway, one instrument
+```
+
 ## What This Model Doesn't Know
 
 Most of the numbers in this simulator are estimates. Pretending otherwise would
@@ -91,7 +152,7 @@ are written down as claims instead — `claims.py` names each one, records what
 happened when it was tested, and keeps the versions that turned out wrong.
 
 Right now **76% of the model's active claims have never been checked against
-evidence**, and there are 34 open unknowns on the list. That number is meant to
+evidence**, and there are 55 open unknowns on the list. That number is meant to
 be uncomfortable. It's also the honest one.
 
 ### The loop
@@ -100,12 +161,21 @@ be uncomfortable. It's also the honest one.
 hypothesize  →  run  →  falsified  →  edit claim  →  unknowns  →  rerun
 ```
 
-A worked example is in [`legacy/`](legacy/): the days-to-crisis formula divided
-a day count by 365, adding years to days, and reported that a town holding three
-years of food would reach crisis in 6.3 days. Its own adjacent output — 328.8%
-annual surplus — is what exposed it. The record keeps the falsified formula, its
-output, the arithmetic, the fix, and the three things that are *still* unknown
-about the successor.
+Two worked examples are in [`legacy/`](legacy/).
+
+The days-to-crisis formula divided a day count by 365, adding years to days, and
+reported that a town holding three years of food would reach crisis in 6.3 days.
+Its own adjacent output — 328.8% annual surplus — is what exposed it.
+
+The overall score was an unweighted mean of six domains, which reported Fairmont
+as FUNCTIONAL while its energy domain sat at 50. That looked cosmetic until the
+leverage analysis ranked a $200 skills inventory **176× above** the one small
+lever that actually moved the binding domain. A score that inverts the advice is
+worse than a score that is merely imprecise. The state is now held down to the
+weakest domain.
+
+Each record keeps the falsified version, its output, the reasoning, the fix, and
+what is *still* unknown about the successor.
 
 ### Precedence still carries
 

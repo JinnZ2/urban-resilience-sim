@@ -152,6 +152,77 @@ def local_production_capacity(profile: CommunityProfile) -> dict:
 
 # ── Infrastructure scoring ───────────────────────────────────
 
+# [SCORE-03] untested thresholds.
+_STATE_ORDER = [InfraState.FAILED, InfraState.DEGRADED,
+                InfraState.STRESSED, InfraState.FUNCTIONAL]
+
+
+def _state_from_score(score: float) -> InfraState:
+    if score >= 70:
+        return InfraState.FUNCTIONAL
+    if score >= 50:
+        return InfraState.STRESSED
+    if score >= 30:
+        return InfraState.DEGRADED
+    return InfraState.FAILED
+
+
+def autonomy_scores(profile: CommunityProfile) -> dict:
+    """Score each domain counting only capacity that survives disconnection.
+
+    [SCORE-05] score_infrastructure() awards points for municipal water,
+    grid connection and highway access. Those are real service, but they are
+    dependencies on systems the disruption scenarios explicitly remove — a
+    town scores them right up to the moment they stop mattering. This is the
+    same scoring with every externally-supplied term set to zero, so the two
+    can be read side by side: the gap between them is the community's
+    exposure.
+    """
+    scores = {}
+
+    # Water — municipal supply and treatment drop out; local sources remain.
+    water = min(15, profile.wells_private * 3)
+    water += min(10, profile.surface_water_sources * 5)
+    water += min(10, profile.days_water_reserve * 2)
+    water += 15 if profile.backup_power_water_plant else 0
+    scores["water"] = min(100, water)
+
+    # Energy — grid connection drops out; fuel reserves are finite but local.
+    energy = min(30, profile.local_generation_mw * 10)
+    energy += min(15, profile.solar_installations * 2)
+    energy += min(15, profile.wind_capacity_mw * 5)
+    energy += min(10, profile.backup_generators * 2)
+    energy += min(10, profile.fuel_reserve_days * 2)
+    scores["energy"] = min(100, energy)
+
+    # Medical — facilities stand, but resupply and staffing are not modelled.
+    medical = 30 if profile.hospital_present else 0
+    medical += 20 if profile.clinic_present else 0
+    medical += min(20, profile.pharmacy_count * 10)
+    medical += 15 if profile.ems_available else 0
+    scores["medical"] = min(100, medical)
+
+    # Communication — towers and ISPs drop out; ham and local alerting remain.
+    comm = min(30, profile.ham_radio_operators * 10)
+    comm += 20 if profile.community_alert_system else 0
+    scores["communication"] = min(100, comm)
+
+    # Social cohesion — entirely local already; unchanged.
+    social = min(20, profile.skill_holders_identified * 2)
+    social += min(25, profile.mutual_aid_networks * 10)
+    social += min(20, profile.faith_communities * 5)
+    social += min(20, profile.civic_organizations * 5)
+    social += 15 if profile.community_gardens_acres > 0 else 0
+    scores["social_cohesion"] = min(100, social)
+
+    # Transportation — highway and rail drop out; local fuel remains.
+    transport = min(30, profile.fuel_stations * 10)
+    transport += min(20, profile.fuel_reserve_days * 4)
+    scores["transportation"] = min(100, transport)
+
+    return {k: round(v, 1) for k, v in scores.items()}
+
+
 def score_infrastructure(profile: CommunityProfile) -> dict:
     """Score infrastructure resilience across domains."""
     scores = {}
@@ -213,19 +284,29 @@ def score_infrastructure(profile: CommunityProfile) -> dict:
     scores["transportation"] = min(100, transport)
 
     overall = sum(scores.values()) / len(scores)
-    if overall >= 70:
-        state = InfraState.FUNCTIONAL
-    elif overall >= 50:
-        state = InfraState.STRESSED
-    elif overall >= 30:
-        state = InfraState.DEGRADED
-    else:
-        state = InfraState.FAILED
+
+    # [SCORE-04] revises SCORE-01 — see claims.py and legacy/.
+    # A community is no more functional than its weakest essential domain.
+    # The mean alone reported Fairmont as FUNCTIONAL while its energy domain
+    # sat at 50, hiding the constraint that would actually bind first.
+    binding_domain = min(scores, key=lambda d: scores[d])
+    floor = scores[binding_domain]
+    state = min(_state_from_score(overall), _state_from_score(floor),
+                key=_STATE_ORDER.index)
+
+    # [SCORE-05] Terms that reward connection to an external system are
+    # dependencies, not resilience — they score zero when that system fails.
+    autonomy = autonomy_scores(profile)
 
     return {
         "scores": scores,
         "overall": round(overall, 1),
         "state": state,
+        "mean_state": _state_from_score(overall),
+        "binding_constraint": binding_domain,
+        "floor": floor,
+        "autonomy": autonomy,
+        "autonomy_overall": round(sum(autonomy.values()) / len(autonomy), 1),
         "water_security": water_state,
     }
 
@@ -253,12 +334,27 @@ def community_report(profile: CommunityProfile) -> str:
         f"── INFRASTRUCTURE: {infra['state'].value} (score {infra['overall']}/100) ──",
     ]
 
+    lines.append(f"  {'domain':20s}  connected      if disconnected")
     for domain, score in infra["scores"].items():
         bar_len = int(score / 5)
         bar = "█" * bar_len + "░" * (20 - bar_len)
-        lines.append(f"  {domain.replace('_', ' ').title():20s} [{bar}] {score}/100")
+        auto = infra["autonomy"][domain]
+        mark = " <- binds" if domain == infra["binding_constraint"] else ""
+        lines.append(f"  {domain.replace('_', ' ').title():20s} [{bar}] "
+                     f"{score:5.1f}    {auto:5.1f}{mark}")
 
+    exposure = round(infra["overall"] - infra["autonomy_overall"], 1)
     lines += [
+        f"",
+        f"  Binding constraint: {infra['binding_constraint'].replace('_', ' ')} "
+        f"at {infra['floor']}/100",
+        f"  Mean score says {infra['mean_state'].value}; the weakest domain "
+        f"holds it to {infra['state'].value}.",
+        f"",
+        f"  Autonomy score (external systems removed): "
+        f"{infra['autonomy_overall']}/100",
+        f"  Exposure gap: {exposure} points of the score depend on",
+        f"    municipal water, the grid, and highway access continuing to work.",
         f"",
         f"  Water security: {infra['water_security'].value}",
         f"{'=' * 60}",
