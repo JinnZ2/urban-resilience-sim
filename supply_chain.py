@@ -51,6 +51,9 @@ class TimeStep:
 
 # ── Preset scenarios ──────────────────────────────────────────
 
+# [CLIMATE-03] STRAINED — five fixed point estimates with no probability
+# weighting, no severity distribution, and no compound events. Observed event
+# severity distributions are moving while this set stays put.
 SCENARIOS = [
     SupplyDisruption(
         "Trucking disruption — fuel shortage",

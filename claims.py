@@ -126,6 +126,9 @@ CLAIM_LEDGER = [
             "Yield decay without synthetic nitrogen — plausibly 40-60% in year one.",
             "Fuel availability for planting and harvest equipment.",
             "Drying and storage energy for wet-harvest corn.",
+            "[CLIMATE-01] The figure is a historical average. Yield "
+            "variance under heat and precipitation volatility matters more "
+            "for planning than the mean, and no variance is recorded.",
         ],
         notes="This is the single largest term in the Fairmont demo. If it is "
               "wrong, the headline food-security number is wrong.",
@@ -228,6 +231,56 @@ CLAIM_LEDGER = [
             "Whether the classes track anything observable, or are labels only.",
         ],
     ),
+    Claim(
+        id="FOOD-10",
+        statement="Crops in CROP_DB are viable in the modelled community's "
+                  "hardiness zone.",
+        module="food_system.py",
+        symbol="CropSpec.zone_min / zone_max, CROP_DB",
+        status=ClaimStatus.STRAINED,
+        basis="The database is titled 'Zone 4 optimized' and every entry "
+              "carries a zone_min and zone_max.",
+        falsifier="A planting plan that recommends a crop the community's "
+                  "actual zone cannot carry.",
+        unknowns=[
+            "Nothing reads zone_min or zone_max. No function filters, warns, "
+            "or errors on zone mismatch, so the fields assert a check that "
+            "does not happen.",
+            "CommunityProfile has no hardiness zone field at all, so there is "
+            "nothing to check against even if a filter existed.",
+            "USDA zones are defined on mean annual extreme minimum "
+            "temperature and have been shifting. A database fixed at 'Zone 4' "
+            "encodes a boundary that moves.",
+            "Zone bounds a crop's winter survival, not its season length. "
+            "Days-to-harvest against a lengthening frost-free window is the "
+            "quantity that actually matters here and is not modelled.",
+        ],
+        notes="Two separate problems that happen to share a field: the check "
+              "is inert, and the thing it would check against is moving. "
+              "Wiring up the filter is straightforward; deciding what zone to "
+              "filter against is not.",
+    ),
+    Claim(
+        id="FOOD-11",
+        statement="CROP_DB yields, days-to-harvest and storage lives are "
+                  "representative for Zone 4 subsistence growing.",
+        module="food_system.py",
+        symbol="CROP_DB",
+        status=ClaimStatus.UNTESTED,
+        basis="Seventeen crop entries with per-square-foot caloric yields, "
+              "harvest intervals and storage months. No source recorded for "
+              "any of them.",
+        falsifier="A measured harvest from a known plot of any single crop.",
+        unknowns=[
+            "Whether yields assume irrigation, amendment and pest control.",
+            "Storage months almost certainly assume a root cellar or "
+            "controlled conditions, which the grid-down scenarios remove.",
+            "Days-to-harvest is a varietal property; no variety is named.",
+        ],
+        notes="Registered late — this module predates the ledger and its "
+              "numbers were never claimed. Filed at the same status the rest "
+              "of the repo's unmeasured constants carry.",
+    ),
 
     # ── Water ──
     Claim(
@@ -238,7 +291,12 @@ CLAIM_LEDGER = [
         status=ClaimStatus.UNTESTED,
         basis="Cited inline as the US average domestic figure.",
         falsifier="Municipal pumping records divided by served population.",
-        unknowns=["Whether the local system's real per-capita draw matches."],
+        unknowns=[
+            "Whether the local system's real per-capita draw matches.",
+            "[CLIMATE-01] surface_water_sources is scored as a static count "
+            "with no reliability or seasonality term. The model counts a "
+            "lake as a lake regardless of its August level.",
+        ],
     ),
     Claim(
         id="WATER-02",
@@ -249,7 +307,13 @@ CLAIM_LEDGER = [
         basis="Common emergency-planning figure.",
         falsifier="Physiological requirement under the actual work and "
                   "temperature conditions modelled.",
-        unknowns=["Summer labour raises this substantially."],
+        unknowns=[
+            "Summer labour raises this substantially.",
+            "[CLIMATE-01] Calibrated on historical summer conditions. The "
+            "figure is a physiological requirement, so it does not drift — "
+            "but the number of days on which the higher labour figure "
+            "applies does.",
+        ],
     ),
     Claim(
         id="WATER-03",
@@ -583,6 +647,126 @@ CLAIM_LEDGER = [
             "instrument is frequently not the achievable one.",
         ],
     ),
+
+    # ── Climate & stationarity ──
+    Claim(
+        id="CLIMATE-01",
+        statement="Historical conditions are a usable calibration baseline "
+                  "for the next few decades — the climate this model plans "
+                  "against is approximately stationary.",
+        module="all modules",
+        symbol="every constant calibrated on historical observation",
+        status=ClaimStatus.STRAINED,
+        basis="Implicit everywhere. Crop viability, storm duration, yields "
+              "per acre, water reserve sizing and fuel reserve days are all "
+              "historical figures used as forward estimates.",
+        falsifier="Observed indicators departing from the historical "
+                  "distribution the constants were drawn from.",
+        unknowns=[
+            "Which specific constants are most sensitive to a moved baseline. "
+            "Nothing in the repo does a sensitivity analysis.",
+            "The rate of change relative to the planning horizon. A 20-year "
+            "bond issued under transition.py outlives any baseline here.",
+            "Whether local Zone 4 conditions track the global signal at all — "
+            "continental interiors do not move with the global mean.",
+            "What a non-stationary version would even look like. Scenario "
+            "ranges instead of point estimates is the obvious answer and is "
+            "a rewrite of every scoring function.",
+        ],
+        notes="STRAINED, not FALSIFIED: the data contradicts the assumption "
+              "but there is no revision on record, and inventing local "
+              "numbers to look current would be worse than the stale ones. "
+              "This is the widest-scope claim in the ledger.",
+    ),
+    Claim(
+        id="CLIMATE-02",
+        statement="'Zone 4 optimized' remains an accurate description of the "
+                  "crop database for the communities this model serves.",
+        module="food_system.py",
+        symbol="CROP_DB",
+        status=ClaimStatus.STRAINED,
+        basis="Module header and the zone bounds on each crop entry.",
+        falsifier="A published hardiness zone revision moving the modelled "
+                  "county out of Zone 4.",
+        unknowns=[
+            "Which zone the target community is actually in today.",
+            "Whether a shift to 5a would change any planting recommendation, "
+            "or merely widen the viable set. Widening is not a problem; the "
+            "model failing to notice is.",
+            "Whether the fast-cycle crisis crops — the ones that matter most "
+            "in the first weeks — are zone-sensitive at all.",
+        ],
+        notes="See also FOOD-10: the zone fields that would carry this check "
+              "are not read by anything.",
+    ),
+    Claim(
+        id="CLIMATE-03",
+        statement="The five preset disruption scenarios span the plausible "
+                  "range of events this community should plan against.",
+        module="supply_chain.py",
+        symbol="SCENARIOS",
+        status=ClaimStatus.STRAINED,
+        basis="Five hand-picked scenarios with fixed severity and duration.",
+        falsifier="A real disruption outside the severity or duration range "
+                  "of all five.",
+        unknowns=[
+            "No scenario carries a probability or return period, so 'plausible "
+            "range' is asserted by the act of listing them.",
+            "Severity and duration are point values with no distribution. "
+            "'Winter storm — 2 week isolation' is one draw from a "
+            "distribution whose tail is the part that matters.",
+            "Compound events are absent: the scenarios fire one at a time, "
+            "and the expensive failures are the ones that overlap.",
+            "Whether a slow-onset scenario — multi-year drought, aquifer "
+            "decline — belongs in the set. Every current scenario is an "
+            "acute event with a defined end.",
+        ],
+        notes="Observed event severity distributions are moving while these "
+              "five stay fixed. The absence of any probability weighting is "
+              "the larger problem and predates the climate data.",
+    ),
+    Claim(
+        id="CLIMATE-04",
+        statement="The bears_on mapping correctly identifies which model "
+                  "claims each observed indicator strains.",
+        module="climate.py",
+        symbol="Indicator.bears_on / strained_claims()",
+        status=ClaimStatus.UNTESTED,
+        basis="Author judgement about causal routes from a global indicator "
+              "to a local model constant.",
+        falsifier="A demonstrated route from an indicator marked unmodelled "
+                  "to an output of this model, or a mapped claim shown to be "
+                  "insensitive to its indicator.",
+        unknowns=[
+            "The split between modelled and unmodelled indicators is a "
+            "judgement call. Sea level is excluded for an inland town, but "
+            "coastal port disruption reaches every inland supply chain.",
+            "Strain is recorded as a boolean. Nothing captures how much a "
+            "claim is strained, so a marginal link and a severe one look "
+            "identical.",
+        ],
+        notes="Deliberately conservative: an indicator is only marked as "
+              "reaching the model when the route is short enough to name in "
+              "one sentence.",
+    ),
+    Claim(
+        id="CLIMATE-05",
+        statement="The recorded indicator values come from State of the "
+                  "Climate in 2025, 36th edition, BAMS 107(8), August 2026.",
+        module="climate.py",
+        symbol="SOURCE",
+        status=ClaimStatus.SUPPORTED,
+        basis="Publication record verified against AMS.",
+        falsifier="The published report differing from any recorded value.",
+        unknowns=[
+            "Individual values were not checked line-by-line against the "
+            "published chapters; the citation was verified, the figures were "
+            "taken as given.",
+            "Several entries are summary characterisations ('2nd or 3rd "
+            "warmest') rather than the report's own numeric series.",
+        ],
+        notes="Provenance was corrected on entry — see the observation.",
+    ),
 ]
 
 
@@ -703,6 +887,60 @@ OBSERVATIONS = [
                 "community — GARDEN-ORD adds 0.3 days of food — but hard caps "
                 "make the score blind to it. Capping does not merely compress "
                 "the top; it reports 'no benefit' for real benefit.",
+        verdict=Verdict.CONTRADICTS,
+    ),
+    Observation(
+        claim_id="CLIMATE-05",
+        date="2026-08-25",
+        source="AMS publication record, checked against the supplied summary",
+        finding="The figures arrived attributed to a report 'published August "
+                "2025' that 'covers the 2025 calendar year'. That cannot be — "
+                "a report cannot cover a year that has not ended, and BAMS "
+                "State of the Climate editions publish in August covering the "
+                "prior year. Verified: 36th annual edition, State of the "
+                "Climate in 2025, BAMS vol. 107 no. 8, published August 2026, "
+                "625 scientists across 60 countries. Publication year "
+                "corrected on entry; no indicator value was altered.",
+        verdict=Verdict.CONFIRMS,
+    ),
+    Observation(
+        claim_id="CLIMATE-01",
+        date="2026-08-25",
+        source="State of the Climate in 2025 (BAMS 107(8))",
+        finding="2025 ranked 2nd or 3rd warmest on record while ENSO was "
+                "near-neutral to La Nina-like — the warmest year on record "
+                "with no El Nino present. The 2023-24 records were partly "
+                "El Nino-driven; this one was not. A record set on a cyclical "
+                "boost is a warm year, a record set without one is a moved "
+                "baseline. The last 11 years are the 11 warmest. Every "
+                "historical calibration in this repo assumes a baseline that "
+                "holds still.",
+        verdict=Verdict.CONTRADICTS,
+    ),
+    Observation(
+        claim_id="FOOD-10",
+        date="2026-08-25",
+        source="Reference search across the module set",
+        finding="CropSpec.zone_min and zone_max are declared at "
+                "food_system.py:37-38 and populated for all 17 crops, but no "
+                "code reads either field — no filter, no warning, no error on "
+                "mismatch. CommunityProfile carries no hardiness zone field "
+                "to check against. The database asserts a compatibility check "
+                "that does not exist. Second instance of this pattern after "
+                "FOOD-04.",
+        verdict=Verdict.CONTRADICTS,
+    ),
+    Observation(
+        claim_id="CLIMATE-03",
+        date="2026-08-25",
+        source="State of the Climate in 2025 (BAMS 107(8))",
+        finding="97 named tropical cyclones against a 1991-2020 average of "
+                "87, with 5 reaching Category 5 and 3 of those in the North "
+                "Atlantic. Not a direct hazard to inland southern Minnesota, "
+                "and recorded as such. It is evidence that event severity "
+                "distributions are moving while SCENARIOS holds five fixed "
+                "point estimates with no probability weighting and no "
+                "compound events.",
         verdict=Verdict.CONTRADICTS,
     ),
     Observation(

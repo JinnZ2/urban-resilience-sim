@@ -24,6 +24,7 @@ urban-resilience-sim/
 ├── network.py         — Inter-community corridor networking, trade matching, Haversine distance
 ├── salvage.py         — Urban salvage & material recovery: junk/waste → usable resources
 ├── transition.py      — Leverage analysis + governance/financial pathways from old design to new
+├── climate.py         — External forcing baseline; which claims rest on a moved calibration
 ├── claims.py          — Assumption ledger: every claim the model rests on, its test status, and its falsification record
 ├── simulator.py       — Interactive CLI that ties all modules together (entry point)
 ├── legacy/            — Superseded work, kept with the evidence that retired it
@@ -42,6 +43,7 @@ simulator.py
 ├── network.py         (no internal deps)
 ├── salvage.py         (no internal deps)
 ├── transition.py      → community.py
+├── climate.py         (no internal deps — names claim ids, imports none)
 └── claims.py          (no internal deps — describes the others, imports none)
 ```
 
@@ -59,6 +61,7 @@ python water_system.py     # Water infrastructure report
 python network.py          # Corridor network report
 python salvage.py          # Salvage & material recovery report
 python transition.py       # Leverage ranking, phased transition pathway, one instrument
+python climate.py          # Observed forcing record and the stationarity check
 python claims.py           # Assumption ledger, a claim lineage, and open unknowns
 ```
 
@@ -90,6 +93,7 @@ Every module has an `if __name__ == "__main__"` block with a Fairmont, MN demo.
 - `CorridorNetwork` / `CommunityNode` / `Connection` (network.py) — graph of inter-community links
 - `SalvageProfile` / `SalvageSource` / `SALVAGE_DB` (salvage.py) — urban salvage inventory, material recovery, reuse planning
 - `Lever` / `LEVER_DB` / `InstrumentSpec` / `INSTRUMENT_DB` (transition.py) — modifications and the legal/financial vehicles that deliver them
+- `Indicator` / `INDICATORS` (climate.py) — observed climate indicators, each with the claim ids it strains and the route it takes into the model (empty if none)
 - `Claim` / `Observation` / `CLAIM_LEDGER` / `OBSERVATIONS` (claims.py) — the model's assertions, their test status, and the runs filed against them
 
 ### Constants
@@ -142,6 +146,44 @@ Give it real `changes` against `CommunityProfile` fields, honest `cost_low` /
 `cost_high`, the `instruments` that could actually carry it, and any
 `prerequisites`. Then register its cost and lead-time basis under the `TRANS-*`
 claims — the same rule as any other number in this repo.
+
+## External Data & the Stationarity Rule (`climate.py`)
+
+Every constant in this repo is calibrated on historical observation, which
+assumes the past is a usable guide to the planning horizon. `climate.py` records
+the observed indicators that bear on that assumption and names which claims each
+one strains. It models nothing.
+
+### Adding external data
+
+**Do not change a constant because a global indicator moved.** A global figure
+does not license a specific local number — knowing that growing seasons are
+lengthening does not tell you what Zone 4 corn yields next year. Record the
+strain, name the unknowns, leave the number alone until something local is
+measured. A model that is differently wrong and newly confident is worse than
+one that is honestly stale. That rule is `CLIMATE-01`.
+
+When adding an `Indicator`:
+
+1. Verify the provenance before entry. The 2025 figures arrived attributed to a
+   report "published August 2025 covering the 2025 calendar year", which is
+   impossible on its face. Verified and corrected to the 36th edition, BAMS
+   107(8), August 2026. The observation records the correction.
+2. Fill `bears_on` with claim ids only where you can name the causal route in
+   one sentence, and put that sentence in `pathway`.
+3. **Leave `pathway` empty when there is no route into this model.** Sea level,
+   Arctic ice extent and glacier mass balance are recorded with no pathway and
+   listed separately by `unmodelled_indicators()`. Carrying an alarming number
+   that changes no output is the decorative-statistic habit the ledger exists to
+   prevent, and the split has to stay visible for that to keep working.
+
+### The honest split
+
+`climate_report()` prints indicators that reach the model and indicators that do
+not, under separate headings, on purpose. Roughly two thirds of the recorded
+indicators are in the second group. That ratio is the point: this is a
+community infrastructure model, not a climate model, and most global indicators
+genuinely do not enter its arithmetic.
 
 ## Assumption Ledger & the Precedence Rule
 
