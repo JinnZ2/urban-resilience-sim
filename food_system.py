@@ -34,6 +34,9 @@ class CropSpec:
     days_to_harvest: int
     calories_per_sq_ft: float   # annual yield
     stores_months: float        # how long it keeps
+    # [FOOD-10] STRAINED — nothing reads these. No function filters, warns
+    # or errors on zone mismatch, and CommunityProfile has no zone field to
+    # check against. [CLIMATE-02] the zone boundary itself is moving.
     zone_min: int
     zone_max: int
     water_needs: str            # "low" | "moderate" | "high"
@@ -43,6 +46,8 @@ class CropSpec:
 
 
 # ── Crop database (Zone 4 optimized) ─────────────────────────
+# [FOOD-11] Yields, days-to-harvest and storage lives are untested estimates.
+# [CLIMATE-02] 'Zone 4' is a historical boundary, not a fixed one.
 
 CROP_DB = [
     # Fast cycle — first food in crisis

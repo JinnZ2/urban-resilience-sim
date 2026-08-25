@@ -31,6 +31,7 @@ from salvage import SalvageProfile, salvage_report, salvage_resilience_score
 from claims import CLAIM_LEDGER, ledger_report, lineage_report, unknowns_report
 from transition import (LeverScale, Instrument, INSTRUMENT_DB, leverage_report,
                         transition_report, instrument_report)
+from climate import climate_report, stationarity_report
 
 
 # ── Terminal helpers ──────────────────────────────────────────
@@ -367,6 +368,7 @@ def main():
             "Leverage Analysis" + (" — most resilience per dollar" if profile else " (build profile first)"),
             "Transition Pathway" + (" — governance & funding steps" if profile else " (build profile first)"),
             "Assumption Ledger — what this model claims, and what's been falsified",
+            "Climate Baseline — is this model calibrated on a moved baseline?",
             "Quit",
         ]
 
@@ -446,6 +448,10 @@ def main():
             pause()
 
         elif choice == 12:
+            show_climate_baseline()
+            pause()
+
+        elif choice == 13:
             banner("Stay resilient.", char="#")
             break
 
@@ -484,6 +490,18 @@ def show_transition(profile: CommunityProfile):
                   for i in instruments]
         picked = prompt_choice("Which instrument?", labels)
         print(instrument_report(instruments[picked]))
+
+
+def show_climate_baseline():
+    """Observed external forcing, and which model claims it strains."""
+    banner("CLIMATE BASELINE")
+    print("  Every number in this model is calibrated on historical conditions.")
+    print("  That is an assumption. This is the check on it.\n")
+
+    options = ["Stationarity check — which claims rest on a moved baseline",
+               "Full observed record — including what does NOT reach this model"]
+    choice = prompt_choice("View:", options)
+    print(stationarity_report() if choice == 0 else climate_report())
 
 
 def show_assumption_ledger():

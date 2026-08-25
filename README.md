@@ -11,7 +11,7 @@ and what does the transition path look like?
 
 Simulates how a small community (1,000–50,000 people) responds to cascading
 infrastructure failures and models recovery pathways using local ecological
-and human resources. The simulator covers seven interconnected domains:
+and human resources. The simulator covers eight interconnected domains:
 
 - **Supply chain stress** — model disruption scenarios from fuel shortages to full regional collapse, with week-by-week timelines showing food, fuel, water, and medical status
 - **Food system planning** — crisis planting plans optimized for Zone 4, a crop database with caloric yields and storage life, and self-sufficiency benchmarks
@@ -20,6 +20,7 @@ and human resources. The simulator covers seven interconnected domains:
 - **Salvage & material recovery** — inventory urban junk, abandoned structures, and waste streams; generate prioritized reuse plans turning scrap into shelter, growing infrastructure, energy, tools, and trade goods
 - **Inter-community networking** — map corridor connections between towns, match surplus/need for trade, and assess regional resilience
 - **Leverage & transition** — rank modifications by resilience bought per dollar, then map each one to the ordinance, bond, co-op, grant, or loan fund that could actually deliver it
+- **Stationarity checking** — record the observed climate indicators that bear on the model's historical calibration, and name which assumptions they strain
 
 ## Running
 
@@ -38,6 +39,7 @@ python water_system.py     # Water infrastructure report
 python network.py          # Corridor network and trade matching
 python salvage.py          # Salvage & material recovery report
 python transition.py       # Leverage ranking + phased transition pathway
+python climate.py          # Observed forcing record + stationarity check
 python claims.py           # Assumption ledger — what the model claims, and what's been falsified
 ```
 
@@ -78,6 +80,10 @@ transition.py        Leverage analysis — which changes buy the most per dollar
                      20 governance & financial instruments with their real
                      procedural steps, timelines, and failure modes
                      Phased transition pathway with lock-in warnings
+
+climate.py           Observed external forcing baseline with provenance
+                     Stationarity check — which claims rest on a moved baseline
+                     Honest split: what reaches this model, and what doesn't
 
 claims.py            Assumption ledger — every claim the model rests on
                      Falsification record with two-way supersession links
@@ -144,6 +150,54 @@ coincidence.
 python transition.py       # leverage ranking, phased pathway, one instrument
 ```
 
+## Is This Model Calibrated on a Baseline That Moved?
+
+Every constant here — Zone 4 crop viability, "2 week" winter storm isolation,
+grain yields per acre, days of water reserve — is a historical figure used as a
+forward estimate. That's an assumption, and `climate.py` makes it one you can
+read: `CLIMATE-01`, currently `STRAINED`.
+
+The load-bearing finding in the [2025 State of the Climate
+report](https://www.ncei.noaa.gov/bams-state-of-climate) isn't any single record
+value. It's that 2025 ranked 2nd–3rd warmest **with no El Niño present** — the
+2023–24 records rode a strong El Niño, this one didn't. A record set on a
+cyclical boost is a warm year. A record set without one is a moved baseline. The
+model assumes the opposite.
+
+Nine claims are now marked as strained by observed data, including two dead
+ends worth naming: `CropSpec.zone_min`/`zone_max` are populated for all 17 crops
+and **read by nothing** — the database asserts a compatibility check that doesn't
+happen — and `SCENARIOS` holds five fixed point estimates with no probability
+weighting and no compound events.
+
+### What this deliberately does *not* do
+
+**No constant was changed.** A global indicator doesn't license a specific local
+number: knowing growing seasons are lengthening doesn't tell you what Zone 4 corn
+yields next year. The strain is recorded, the unknowns are named, the numbers
+stay put until something local is measured. Changing them now would produce a
+model that is *differently wrong and newly confident* — worse than one that's
+honestly stale.
+
+### Most of it doesn't reach this model, and that's stated
+
+Roughly two thirds of the recorded indicators — sea level, Arctic and Antarctic
+ice, ocean heat, glacier mass balance, atmospheric CO₂ — are filed with **no
+pathway** into any calculation here and listed under their own heading. They're
+real; they're not evidence about a town at 1,180 feet in southern Minnesota.
+Carrying an alarming number that changes no output is exactly the decorative-
+statistic habit the ledger exists to prevent.
+
+Provenance gets verified before entry. These figures arrived cited to a report
+"published August 2025 covering the 2025 calendar year" — impossible on its face,
+since a report can't cover a year that hasn't ended. Corrected to the 36th
+edition, BAMS 107(8), August 2026. The correction is an observation on the
+record, not a silent edit.
+
+```bash
+python climate.py          # the observed record, and the stationarity check
+```
+
 ## What This Model Doesn't Know
 
 Most of the numbers in this simulator are estimates. Pretending otherwise would
@@ -151,8 +205,8 @@ make it worse than useless in the conditions it's built for, so the estimates
 are written down as claims instead — `claims.py` names each one, records what
 happened when it was tested, and keeps the versions that turned out wrong.
 
-Right now **76% of the model's active claims have never been checked against
-evidence**, and there are 55 open unknowns on the list. That number is meant to
+Right now **67% of the model's active claims have never been checked against
+evidence**, and there are 80 open unknowns on the list. That number is meant to
 be uncomfortable. It's also the honest one.
 
 ### The loop
