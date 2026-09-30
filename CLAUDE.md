@@ -268,10 +268,11 @@ No formal test suite exists. Each module can be run standalone to verify output.
 - **Practical over precise** — models use simplified math with documented assumptions. The goal is actionable community planning, not academic precision.
 - **All reports are text-based** — designed for terminal output, potentially without Unicode support beyond basic block characters.
 
-<!-- clone-refspec-note v1 -->
+<!-- clone-refspec-note v1.1 -->
 ## Cloning and pushing
 Shallow clones are single-branch by default.
-Before pushing any branch other than main, run:
+Before pushing any branch other than the default
+branch, run:
 
     git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
     git fetch --depth 1
@@ -280,4 +281,4 @@ Or clone with: git clone --depth 1 --no-single-branch <url>
 Without this, the first push of a new branch
 fails the tracking-ref check even when the
 commit landed.
-<!-- /clone-refspec-note v1 -->
+<!-- /clone-refspec-note v1.1 -->
